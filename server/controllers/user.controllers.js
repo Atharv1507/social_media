@@ -93,7 +93,7 @@ export const loginUser = async (req, res) => {
         res.cookie("token", token, cookiesOptions)
 
 
-        res.status(200).json({ message: "User Logged IN" , userData: user })
+        res.status(200).json({ message: "User Logged IN", userData: user })
 
 
     } catch (error) {
@@ -104,4 +104,22 @@ export const loginUser = async (req, res) => {
 
 export const getUser = async (req, res) => {
     res.status(200).json({ message: "User Authenticated", userData: req.user })
+}
+
+export const getUserProfile = async (req, res) => {
+    try {
+        const { username } = req.params
+
+        const user = User.findOne({ username })
+
+        if (!user) {
+            return res.status(404).json({ message: "User Not Found" })
+        }
+
+        res.status(200).json({ message: "User Found", profileData: user })
+
+
+    } catch (error) {
+        res.status(500).json({ message: 'Internal Server Errorr', error: error })
+    }
 }
