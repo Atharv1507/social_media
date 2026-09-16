@@ -26,7 +26,8 @@ function Login() {
            
           e.preventDefault()
           try {
-          const user =  await axiosInstance.post('/users/login' , form) 
+          const user =  await axiosInstance.post('/users/login' , form)
+          console.log(user) 
            // Add all the validation errors
            // Add a Loader
 
@@ -34,7 +35,7 @@ function Login() {
 
            console.log("User Logged in")
 
-           setUser(user)
+           setUser(user.data.userData)
 
            navigate('/home')
 

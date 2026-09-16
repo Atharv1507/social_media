@@ -93,7 +93,7 @@ export const loginUser = async (req, res) => {
         res.cookie("token", token, cookiesOptions)
 
 
-        res.status(200).json({ message: "User Logged IN" })
+        res.status(200).json({ message: "User Logged IN" , userData: user })
 
 
     } catch (error) {
