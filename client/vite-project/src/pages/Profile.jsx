@@ -12,6 +12,8 @@ function Profile() {
 
   const isOwnProfile = user.username === username
 
+  console.log(isOwnProfile)
+
 
 
   console.log(username) // james123
@@ -33,7 +35,7 @@ function Profile() {
 
   const [activeTab, setActiveTab] = useState('posts')
 
-  if (!user) {
+  if (!userData) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
@@ -41,7 +43,7 @@ function Profile() {
     )
   }
 
-  const joinedDate = new Date(user.createdAt).toLocaleDateString('en-US', {
+  const joinedDate = new Date(userData.createdAt).toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
   })
@@ -64,13 +66,13 @@ function Profile() {
               {/* Avatar & Identifiers */}
               <div className="flex items-end space-x-5">
                 <div className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full border-4 border-white bg-indigo-600 text-4xl sm:text-5xl font-black text-white shadow-lg shrink-0">
-                  {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <div className="mb-2">
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
-                    {user.name}
+                    {userData.name}
                   </h1>
-                  <p className="text-sm font-semibold text-indigo-600">@{user.username}</p>
+                  <p className="text-sm font-semibold text-indigo-600">@{userData.username}</p>
                 </div>
               </div>
 
@@ -94,22 +96,22 @@ function Profile() {
               {/* Joined / Email Info */}
               <div className="md:col-span-1 space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account Details</p>
-                <p className="text-sm text-slate-600 truncate">{user.email}</p>
+                <p className="text-sm text-slate-600 truncate">{userData.email}</p>
                 <p className="text-xs text-slate-400">Member since {joinedDate}</p>
               </div>
 
               {/* Stats Center Grid */}
               <div className="md:col-span-2 flex justify-between sm:justify-end gap-8 text-center sm:text-right">
                 <div>
-                  <span className="block text-xl font-bold text-slate-900">{user.posts?.length || 0}</span>
+                  <span className="block text-xl font-bold text-slate-900">{userData.posts?.length || 0}</span>
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Posts</span>
                 </div>
                 <div>
-                  <span className="block text-xl font-bold text-slate-900">{user.followers?.length || 0}</span>
+                  <span className="block text-xl font-bold text-slate-900">{userData.followers?.length || 0}</span>
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Followers</span>
                 </div>
                 <div>
-                  <span className="block text-xl font-bold text-slate-900">{user.followings?.length || 0}</span>
+                  <span className="block text-xl font-bold text-slate-900">{userData.followings?.length || 0}</span>
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Following</span>
                 </div>
               </div>
@@ -120,8 +122,8 @@ function Profile() {
           {/* Interactive Navigation Tabs */}
           <div className="flex border-t border-slate-100 bg-slate-50/50 px-6">
             {[
-              { id: 'posts', label: 'Posts', count: user.posts?.length || 0 },
-              { id: 'reels', label: 'Reels', count: user.reels?.length || 0 },
+              { id: 'posts', label: 'Posts', count: userData.posts?.length || 0 },
+              { id: 'reels', label: 'Reels', count: userData.reels?.length || 0 },
             ].map((tab) => (
               <button
                 key={tab.id}
