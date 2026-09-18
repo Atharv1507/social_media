@@ -25,7 +25,7 @@ function App() {
 
           <Route path='/home' element={<ProtectedRoute><Home /></ProtectedRoute>} />
 
-          <Route path='/profile/:username' element={<ProtectedRoute><Profile/></ProtectedRoute>} />
+          <Route path='/profile/:username' element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
 
 
