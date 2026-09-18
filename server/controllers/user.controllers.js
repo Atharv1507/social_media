@@ -125,3 +125,78 @@ export const getUserProfile = async (req, res) => {
         res.status(500).json({ message: 'Internal Server Errorr', error: error })
     }
 }
+
+// follow controller
+
+export const followUser = async (req, res) => {
+    try {
+        const currentUserId = req.user._id // 123
+
+        const targetUserId = req.params.id // 345
+
+        const targetUser = await User.findById({ targetUserId })
+        // Do all the Validations
+
+        const alreadyFollowing = targetUser.followers.some((id) => id.toString() === currentUserId)
+
+        if (alreadyFollowing) {
+            res.status(409).json({ message: 'User Already Following' })
+        }
+
+
+        if (currentUserId.toString() === targetUserId.toString()) {
+            res.status(409).json({ message: 'You cannot follow Yourself' })
+        }
+
+        await User.findByIdAndUpdate({ currentUserId }, {
+            $addToSet: { followings: targetUserId }
+        })
+
+        await User.findByIdAndUpdate({ targetUserId }, {
+            $addToSet: { followers: currentUserId }
+        })
+
+        return res.status(201).json({ message: 'User Followed' })
+
+
+    } catch (error) {
+        res.status(500).json({ message: 'Internal Server Errorr', error: error })
+    }
+}
+
+
+export const unFollowUser = async (req, res) => {
+    try {
+        const currentUserId = req.user._id
+
+        const targetUserId = req.params.id
+
+        const targetUser = await User.findById({ targetUserId })
+        // Do all the Validations
+
+        const alreadyFollowing = targetUser.followers.some((id) => id.toString() === currentUserId) // check if the logic is correct
+
+        if (!alreadyFollowing) {
+            res.status(409).json({ message: 'User already is Unfollowed' })
+        }
+
+
+        if (currentUserId.toString() === targetUserId.toString()) {
+            res.status(409).json({ message: 'You cannot unfollow Yourself' })
+        }
+
+        await User.findByIdAndUpdate({ currentUserId }, {
+            $pull: { followings: targetUserId }
+        })
+
+        await User.findByIdAndUpdate({ targetUserId }, {
+            $pull: { followers: currentUserId }
+        })
+
+        return res.status(201).json({ message: 'User unFollowed' })
+
+
+    } catch (error) {
+        res.status(500).json({ message: 'Internal Server Errorr', error: error })
+    }
+}

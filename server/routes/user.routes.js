@@ -1,5 +1,5 @@
 import express from 'express'
-import { getUser, getUserProfile, loginUser, resgiterUser } from '../controllers/user.controllers.js'
+import { followUser, getUser, getUserProfile, loginUser, resgiterUser } from '../controllers/user.controllers.js'
 import { isAuthenticated } from '../middlewares/authMiddleware.js'
 
 
@@ -15,6 +15,8 @@ userRoutes.post('/login' , loginUser)
 userRoutes.get('/me' , isAuthenticated , getUser)
 
 userRoutes.get('/profile/:username' , isAuthenticated , getUserProfile)
+
+// userRoutes.post('/follow/:id' , isAuthenticated , followUser)
 
 
 // userRoutes.get('/logout')
