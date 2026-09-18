@@ -169,3 +169,51 @@ actor + target
  -> relationship mutation
  -> database consistency
 ```
+
+
+## Deep-Dive Teaching Layer
+
+### Production hardening — current implementation audit, secret/cookie/CORS/response/error handling, feature-completeness matrix, debugging playbooks and expanded viva.
+
+This chapter should be read together with the actual source files in the repository. The goal is not to memorize definitions; trace the real request from browser to controller to database and back.
+
+### Implementation-first rule
+
+For every concept, identify four things:
+
+```text
+1. Which file implements it?
+2. Which function executes?
+3. What data enters the function?
+4. What response/state comes out?
+```
+
+### Debugging method
+
+Use the request lifecycle:
+
+```text
+React event
+↓
+Axios method + URL + payload
+↓
+Express route
+↓
+Middleware
+↓
+Controller
+↓
+Mongoose query/update
+↓
+Response status/body
+↓
+React state
+↓
+UI
+```
+
+Do not jump directly to the database or change random code. Find the first boundary where the observed behavior differs from the expected behavior.
+
+### Interview habit
+
+When explaining this feature in a viva, start with the user action, then describe the HTTP request, then the backend execution, then the database operation, and finally how the response changes frontend state. This demonstrates system understanding rather than isolated syntax knowledge.
