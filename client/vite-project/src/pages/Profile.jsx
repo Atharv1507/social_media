@@ -1,12 +1,36 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useParams } from 'react-router-dom'
+import { axiosInstance } from '../axiosCalls/axios'
 
 
 function Profile() {
-  const { user } = useAuth()
-  const {username} = useParams()
-  console.log(username)
+  const { user} = useAuth() // logged in User
+  const { username } = useParams() // logged in user , some other username
+
+  const [userData , setUserData] = useState(null)
+
+  const isOwnProfile = user.username === username
+
+
+
+  console.log(username) // james123
+
+  const fetchProfile = async () => {
+    try {
+      const user = await axiosInstance.get(`users/profile/${username}`)
+      setUserData(user.data.profileData)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    fetchProfile()
+  }, [username])
+
+
+
   const [activeTab, setActiveTab] = useState('posts')
 
   if (!user) {
@@ -26,17 +50,17 @@ function Profile() {
     <div className="min-h-screen bg-slate-50">
       {/* Container with full desktop responsiveness */}
       <div className="mx-auto max-w-6xl px-4 py-8">
-        
+
         {/* Main Profile Header Card */}
         <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-          
+
           {/* Banner Header */}
           <div className="h-48 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 sm:h-64" />
 
           {/* User Details & Actions Header */}
           <div className="px-6 pb-6 sm:px-10">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-16 sm:-mt-20 mb-6 gap-4">
-              
+
               {/* Avatar & Identifiers */}
               <div className="flex items-end space-x-5">
                 <div className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full border-4 border-white bg-indigo-600 text-4xl sm:text-5xl font-black text-white shadow-lg shrink-0">
@@ -66,7 +90,7 @@ function Profile() {
 
             {/* Profile Meta & Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-slate-100">
-              
+
               {/* Joined / Email Info */}
               <div className="md:col-span-1 space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account Details</p>
@@ -102,16 +126,14 @@ function Profile() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 border-b-2 px-6 py-4 text-sm font-semibold transition-all ${
-                  activeTab === tab.id
-                    ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
+                className={`flex items-center gap-2 border-b-2 px-6 py-4 text-sm font-semibold transition-all ${activeTab === tab.id
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
               >
                 {tab.label}
-                <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${
-                  activeTab === tab.id ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-600'
-                }`}>
+                <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${activeTab === tab.id ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-600'
+                  }`}>
                   {tab.count}
                 </span>
               </button>
