@@ -6,7 +6,13 @@ import { Navigate } from 'react-router-dom'
 function ProtectedRoute({ children }) {
 
 
-    const { user } = useAuth()
+
+    const { user , loading } = useAuth()
+
+
+    if(loading){
+        <h1>Loading...</h1>
+    }
 
 
 

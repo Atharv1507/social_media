@@ -5,7 +5,11 @@ import { useAuth } from '../context/AuthContext'
 
 function PublicRoute({children}) {
 
-    const {user} = useAuth()
+    const {user , loading} = useAuth()
+
+    if(loading){
+        <h1>Loading....</h1>
+    }
 
    if(user){
      return <Navigate to='/home'/>
