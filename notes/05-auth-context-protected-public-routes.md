@@ -126,3 +126,50 @@ route decision
 3. Why is ProtectedRoute not backend security?
 4. Why use `replace`?
 5. What happens after refresh?
+
+## Deep-Dive Teaching Layer
+
+### AuthContext/Route guards — initial auth state, refresh restoration, loading race conditions, route decision tree, login/logout integration, frontend/backend boundary and debugging.
+
+This chapter should be read together with the actual source files in the repository. The goal is not to memorize definitions; trace the real request from browser to controller to database and back.
+
+### Implementation-first rule
+
+For every concept, identify four things:
+
+```text
+1. Which file implements it?
+2. Which function executes?
+3. What data enters the function?
+4. What response/state comes out?
+```
+
+### Debugging method
+
+Use the request lifecycle:
+
+```text
+React event
+↓
+Axios method + URL + payload
+↓
+Express route
+↓
+Middleware
+↓
+Controller
+↓
+Mongoose query/update
+↓
+Response status/body
+↓
+React state
+↓
+UI
+```
+
+Do not jump directly to the database or change random code. Find the first boundary where the observed behavior differs from the expected behavior.
+
+### Interview habit
+
+When explaining this feature in a viva, start with the user action, then describe the HTTP request, then the backend execution, then the database operation, and finally how the response changes frontend state. This demonstrates system understanding rather than isolated syntax knowledge.
