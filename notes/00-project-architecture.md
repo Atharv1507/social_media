@@ -191,3 +191,55 @@ Correct response but wrong UI → state/effect dependency.
 3. Why is AuthContext not backend security?
 4. What files participate in login?
 5. Why does `withCredentials` matter?
+
+
+## Deeper Teaching Notes
+
+### Request lifecycle
+
+Every full-stack feature can be debugged as a chain:
+
+```text
+UI event
+→ React state
+→ Axios
+→ Express route
+→ middleware
+→ controller
+→ Mongoose
+→ MongoDB
+→ HTTP response
+→ React state
+→ UI
+```
+
+### Why separation matters
+
+If a controller also renders UI, manages React state, and constructs URLs, the application becomes difficult to test and change. In this repository, each layer owns a specific concern.
+
+### Common interview distinction
+
+`ProtectedRoute` protects navigation. `isAuthenticated` protects the API. The first is a user-experience mechanism; the second is a server-side security boundary.
+
+### Status-code mental model
+
+```text
+400 → request/validation problem
+401 → authentication problem
+403 → authorization problem
+404 → route/resource not found
+409 → conflict
+500 → unexpected server failure
+```
+
+### Practical debugging checklist
+
+When a request is failing, inspect the browser Network tab first. Confirm method, URL, request payload, request cookies, response status, and response body. Then trace the same request through the Express router, middleware, controller, and database operation.
+
+### Viva questions
+
+1. Why do we need both React Router and Express Router?
+2. Why does `withCredentials: true` matter with cookie authentication?
+3. Why is `req.user` useful after authentication middleware?
+4. Why should the backend remain secure even if every React route is protected?
+5. How would you explain the complete login request to an interviewer?
