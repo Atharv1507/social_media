@@ -14,14 +14,10 @@ const cookiesOptions = {
 export const resgiterUser = async (req, res) => {
     try {
         const { name, email, password, username } = req.body
-        // all fileds present 
-        // if the email or username already exists
-        // password should be greater tha 6 characters
 
         if (!username || !email || !password || !name) {
             return res.status(400).json({ message: "All fields Required" })
         }
-
 
         if (password.length < 6) {
             return res.status(400).json({ message: "Password Length should be greater than 6" })
@@ -39,16 +35,8 @@ export const resgiterUser = async (req, res) => {
             return res.status(409).json({ message: "User Already Exists" })
         }
 
-
-        // Password Security
-
         const salt = await bcrypt.genSalt(10)
-
-
         const hashedPassword = await bcrypt.hash(password, salt)
-
-
-
 
         const newUser = await User.create({
             name,
@@ -57,18 +45,13 @@ export const resgiterUser = async (req, res) => {
             password: hashedPassword
         })
 
-        // newUser._id
-
-        // token  - jwt  - access token 
-
         const token = genToken(newUser._id)
 
         res.cookie("token", token, cookiesOptions)
 
-        res.status(201).json({ message: "User Resgitered", user: newUser })
-
+        return res.status(201).json({ message: "User Resgitered", user: newUser })
     } catch (error) {
-        res.status(500).json({ message: 'Internal Server Errorr', error: error })
+        return res.status(500).json({ message: 'Internal Server Errorr', error })
     }
 }
 
@@ -84,8 +67,6 @@ export const loginUser = async (req, res) => {
 
         const passwordCheck = await bcrypt.compare(password, user.password)
 
-        console.log(passwordCheck)
-
         if (!passwordCheck) {
             return res.status(400).json({ message: "Wrong Password" })
         }
@@ -94,18 +75,14 @@ export const loginUser = async (req, res) => {
 
         res.cookie("token", token, cookiesOptions)
 
-
-        res.status(200).json({ message: "User Logged IN", userData: user })
-
-
+        return res.status(200).json({ message: "User Logged IN", userData: user })
     } catch (error) {
-        res.status(500).json({ message: 'Internal Server Errorr', error: error })
+        return res.status(500).json({ message: 'Internal Server Errorr', error })
     }
 }
 
-
 export const getUser = async (req, res) => {
-    res.status(200).json({ message: "User Authenticated", userData: req.user })
+    return res.status(200).json({ message: "User Authenticated", userData: req.user })
 }
 
 export const getUserProfile = async (req, res) => {
@@ -118,85 +95,84 @@ export const getUserProfile = async (req, res) => {
             return res.status(404).json({ message: "User Not Found" })
         }
 
-        res.status(200).json({ message: "User Found", profileData: user })
-
-
+        return res.status(200).json({ message: "User Found", profileData: user })
     } catch (error) {
-        res.status(500).json({ message: 'Internal Server Errorr', error: error })
+        return res.status(500).json({ message: 'Internal Server Errorr', error })
     }
 }
 
-// follow controller
+// Follow / unfollow controllers
 
 export const followUser = async (req, res) => {
     try {
-        const currentUserId = req.user._id // 123
-
-        const targetUserId = req.params.id // 345
-
-        const targetUser = await User.findById({ targetUserId })
-        // Do all the Validations
-
-        const alreadyFollowing = targetUser.followers.some((id) => id.toString() === currentUserId)
-
-        if (alreadyFollowing) {
-            res.status(409).json({ message: 'User Already Following' })
-        }
-
+        const currentUserId = req.user._id
+        const targetUserId = req.params.id
 
         if (currentUserId.toString() === targetUserId.toString()) {
-            res.status(409).json({ message: 'You cannot follow Yourself' })
+            return res.status(409).json({ message: 'You cannot follow Yourself' })
         }
 
-        await User.findByIdAndUpdate({ currentUserId }, {
+        const targetUser = await User.findById(targetUserId)
+
+        if (!targetUser) {
+            return res.status(404).json({ message: 'User Not Found' })
+        }
+
+        const alreadyFollowing = targetUser.followers.some(
+            (id) => id.toString() === currentUserId.toString()
+        )
+
+        if (alreadyFollowing) {
+            return res.status(409).json({ message: 'User Already Following' })
+        }
+
+        await User.findByIdAndUpdate(currentUserId, {
             $addToSet: { followings: targetUserId }
         })
 
-        await User.findByIdAndUpdate({ targetUserId }, {
+        await User.findByIdAndUpdate(targetUserId, {
             $addToSet: { followers: currentUserId }
         })
 
         return res.status(201).json({ message: 'User Followed' })
-
-
     } catch (error) {
-        res.status(500).json({ message: 'Internal Server Errorr', error: error })
+        return res.status(500).json({ message: 'Internal Server Errorr', error })
     }
 }
-
 
 export const unFollowUser = async (req, res) => {
     try {
         const currentUserId = req.user._id
-
         const targetUserId = req.params.id
 
-        const targetUser = await User.findById({ targetUserId })
-        // Do all the Validations
+        if (currentUserId.toString() === targetUserId.toString()) {
+            return res.status(409).json({ message: 'You cannot unfollow Yourself' })
+        }
 
-        const alreadyFollowing = targetUser.followers.some((id) => id.toString() === currentUserId) // check if the logic is correct
+        const targetUser = await User.findById(targetUserId)
+
+        if (!targetUser) {
+            return res.status(404).json({ message: 'User Not Found' })
+        }
+
+        const alreadyFollowing = targetUser.followers.some(
+            (id) => id.toString() === currentUserId.toString()
+        )
 
         if (!alreadyFollowing) {
-            res.status(409).json({ message: 'User already is Unfollowed' })
+            return res.status(409).json({ message: 'User already is Unfollowed' })
         }
 
-
-        if (currentUserId.toString() === targetUserId.toString()) {
-            res.status(409).json({ message: 'You cannot unfollow Yourself' })
-        }
-
-        await User.findByIdAndUpdate({ currentUserId }, {
+        await User.findByIdAndUpdate(currentUserId, {
             $pull: { followings: targetUserId }
         })
 
-        await User.findByIdAndUpdate({ targetUserId }, {
+        await User.findByIdAndUpdate(targetUserId, {
             $pull: { followers: currentUserId }
         })
 
-        return res.status(201).json({ message: 'User unFollowed' })
-
-
+        return res.status(200).json({ message: 'User unFollowed' })
     } catch (error) {
-        res.status(500).json({ message: 'Internal Server Errorr', error: error })
+        return res.status(500).json({ message: 'Internal Server Errorr', error })
     }
 }
