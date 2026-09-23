@@ -11,6 +11,15 @@ function Profile() {
   const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('posts')
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    username: '',
+    email: '',
+    bio: '',
+  })
+  const [previewImage, setPreviewImage] = useState('')
+
 
   const isOwnProfile = user?.username === username
 
@@ -34,6 +43,47 @@ function Profile() {
   useEffect(() => {
     fetchProfile()
   }, [username, user?._id])
+
+  const openEditProfile = () => {
+    setEditForm({
+      name: userData.name || '',
+      username: userData.username || '',
+      email: userData.email || '',
+      bio: userData.bio || '',
+    })
+
+    setPreviewImage(userData.profileImage || '')
+    setIsEditOpen(true)
+  }
+
+  const handleEditChange = (event) => {
+    const { name, value } = event.target
+
+    setEditForm((current) => ({
+      ...current,
+      [name]: value,
+    }))
+  }
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0]
+
+    if (!file) return
+
+    setPreviewImage(URL.createObjectURL(file))
+  }
+
+  const handleEditSubmit = (event) => {
+    event.preventDefault()
+
+    setUserData((current) => ({
+      ...current,
+      ...editForm,
+      profileImage: previewImage,
+    }))
+
+    setIsEditOpen(false)
+  }
 
   const handleFollowToggle = async () => {
     if (!userData || followLoading || isOwnProfile) {
@@ -110,7 +160,10 @@ function Profile() {
 
               <div className="flex items-center gap-3">
                 {isOwnProfile ? (
-                  <button className="flex-1 sm:flex-none rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95">
+                  <button
+                    onClick={openEditProfile}
+                    className="flex-1 sm:flex-none rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95"
+                  >
                     Edit Profile
                   </button>
                 ) : (
@@ -203,6 +256,125 @@ function Profile() {
           )}
         </div>
       </div>
+
+      {isEditOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsEditOpen(false)
+            }
+          }}
+        >
+          <form
+            onSubmit={handleEditSubmit}
+            className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl sm:p-8"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Edit Profile</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Update your profile details
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(false)}
+                className="text-2xl text-slate-400 hover:text-slate-700"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-6 flex flex-col items-center">
+              {previewImage ? (
+                <img
+                  src={previewImage}
+                  alt="Profile preview"
+                  className="h-28 w-28 rounded-full object-cover shadow-lg"
+                />
+              ) : (
+                <div className="flex h-28 w-28 items-center justify-center rounded-full bg-indigo-600 text-4xl font-black text-white">
+                  {editForm.name ? editForm.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+              )}
+
+              <label className="mt-3 cursor-pointer rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">
+                Change Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </label>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-slate-700">Name</label>
+                <input
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleEditChange}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700">Username</label>
+                <input
+                  name="username"
+                  value={editForm.username}
+                  onChange={handleEditChange}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editForm.email}
+                  onChange={handleEditChange}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700">Bio</label>
+                <textarea
+                  rows="3"
+                  name="bio"
+                  value={editForm.bio}
+                  onChange={handleEditChange}
+                  placeholder="Tell people a little about yourself..."
+                  className="mt-1 w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(false)}
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }
