@@ -20,7 +20,6 @@ function Profile() {
   })
   const [previewImage, setPreviewImage] = useState('')
 
-
   const isOwnProfile = user?.username === username
 
   const fetchProfile = async () => {
@@ -44,6 +43,15 @@ function Profile() {
     fetchProfile()
   }, [username, user?._id])
 
+  // Cleanup object URLs when component unmounts or previewImage changes
+  useEffect(() => {
+    return () => {
+      if (previewImage && previewImage.startsWith('blob:')) {
+        URL.revokeObjectURL(previewImage)
+      }
+    }
+  }, [previewImage])
+
   const openEditProfile = () => {
     setEditForm({
       name: userData.name || '',
@@ -66,16 +74,26 @@ function Profile() {
   }
 
   const handleImageChange = (event) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files[0]
 
     if (!file) return
 
-    setPreviewImage(URL.createObjectURL(file))
+    // Clean up previous blob URL to avoid memory leaks
+    if (previewImage && previewImage.startsWith('blob:')) {
+      URL.revokeObjectURL(previewImage)
+    }
+
+    let imageUrl = URL.createObjectURL(file)
+
+    console.log(imageUrl)
+
+    setPreviewImage(imageUrl)
   }
 
   const handleEditSubmit = (event) => {
     event.preventDefault()
 
+    // Updates client state with previewImage (blob URL or existing URL)
     setUserData((current) => ({
       ...current,
       ...editForm,
@@ -142,14 +160,26 @@ function Profile() {
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+          
           <div className="h-48 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 sm:h-64" />
-
+         
           <div className="px-6 pb-6 sm:px-10">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-16 sm:-mt-20 mb-6 gap-4">
               <div className="flex items-end space-x-5">
-                <div className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full border-4 border-white bg-indigo-600 text-4xl sm:text-5xl font-black text-white shadow-lg shrink-0">
-                  {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
-                </div>
+                
+                {/* Main Profile Header Image with fallback initial letter */}
+                {userData.profileImage ? (
+                  <img
+                    src={userData.profileImage}
+                    alt={userData.name}
+                    className="h-28 w-28 sm:h-36 sm:w-36 rounded-full border-4 border-white object-cover shadow-lg shrink-0"
+                  />
+                ) : (
+                  <div className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full border-4 border-white bg-indigo-600 text-4xl sm:text-5xl font-black text-white shadow-lg shrink-0">
+                    {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
+
                 <div className="mb-2">
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
                     {userData.name}
