@@ -5,9 +5,11 @@ import {
     getUserProfile,
     loginUser,
     resgiterUser,
+    testUpload,
     unFollowUser
 } from '../controllers/user.controllers.js'
 import { isAuthenticated } from '../middlewares/authMiddleware.js'
+import upload from '../middlewares/upload.middleware.js'
 
 const userRoutes = express.Router()
 
@@ -18,5 +20,7 @@ userRoutes.get('/profile/:username', isAuthenticated, getUserProfile)
 
 userRoutes.post('/follow/:id', isAuthenticated, followUser)
 userRoutes.post('/unfollow/:id', isAuthenticated, unFollowUser)
+
+userRoutes.post('/testUpload' ,upload.single('profileImage') , testUpload )
 
 export default userRoutes

@@ -176,3 +176,12 @@ export const unFollowUser = async (req, res) => {
         return res.status(500).json({ message: 'Internal Server Errorr', error })
     }
 }
+
+
+export const testUpload = async(req , res)=>{
+     try {
+        res.send(req.file)
+     } catch (error) {
+        
+     }
+}
