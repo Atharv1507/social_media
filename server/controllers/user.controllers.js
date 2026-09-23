@@ -105,8 +105,8 @@ export const getUserProfile = async (req, res) => {
 
 export const followUser = async (req, res) => {
     try {
-        const currentUserId = req.user._id
-        const targetUserId = req.params.id
+        const currentUserId = req.user._id // 456
+        const targetUserId = req.params.id // 123
 
         if (currentUserId.toString() === targetUserId.toString()) {
             return res.status(409).json({ message: 'You cannot follow Yourself' })

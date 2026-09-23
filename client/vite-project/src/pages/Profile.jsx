@@ -5,7 +5,7 @@ import { axiosInstance } from '../axiosCalls/axios'
 
 function Profile() {
   const { user } = useAuth()
-  const { username } = useParams()
+  const { username } = useParams() // steve123
 
   const [userData, setUserData] = useState(null)
   const [isFollowing, setIsFollowing] = useState(false)
@@ -94,7 +94,7 @@ function Profile() {
 
     try {
       const endpoint = isFollowing
-        ? `users/unfollow/${userData._id}`
+        ? `users/unfollow/${userData._id}`//123
         : `users/follow/${userData._id}`
 
       await axiosInstance.post(endpoint)
