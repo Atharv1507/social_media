@@ -25,6 +25,9 @@ const userSchema = new mongoose.Schema({
    profileImage: {
       type: String
    },
+   bio : {
+      type : String
+   },
    // steve123
    followers: [{
       type: mongoose.Schema.Types.ObjectId,

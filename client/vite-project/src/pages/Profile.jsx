@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { axiosInstance } from '../axiosCalls/axios'
 
 function Profile() {
-  const { user } = useAuth()
-  const { username } = useParams() // steve123
+  const { user, setUser } = useAuth() // Assuming setUser is available to update auth state
+  const { username } = useParams()
+  const navigate = useNavigate()
 
   const [userData, setUserData] = useState(null)
   const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('posts')
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
   const [editForm, setEditForm] = useState({
     name: '',
     username: '',
@@ -19,6 +22,7 @@ function Profile() {
     bio: '',
   })
   const [previewImage, setPreviewImage] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null)
 
   const isOwnProfile = user?.username === username
 
@@ -43,7 +47,6 @@ function Profile() {
     fetchProfile()
   }, [username, user?._id])
 
-  // Cleanup object URLs when component unmounts or previewImage changes
   useEffect(() => {
     return () => {
       if (previewImage && previewImage.startsWith('blob:')) {
@@ -61,6 +64,7 @@ function Profile() {
     })
 
     setPreviewImage(userData.profileImage || '')
+    setSelectedFile(null)
     setIsEditOpen(true)
   }
 
@@ -78,41 +82,74 @@ function Profile() {
 
     if (!file) return
 
-    // Clean up previous blob URL to avoid memory leaks
     if (previewImage && previewImage.startsWith('blob:')) {
       URL.revokeObjectURL(previewImage)
     }
 
-    let imageUrl = URL.createObjectURL(file)
-
-    console.log(imageUrl)
-
+    setSelectedFile(file)
+    const imageUrl = URL.createObjectURL(file)
     setPreviewImage(imageUrl)
   }
 
-  const handleEditSubmit = (event) => {
+  const handleEditSubmit = async (event) => {
     event.preventDefault()
+    setIsSaving(true)
 
-    // Updates client state with previewImage (blob URL or existing URL)
-    setUserData((current) => ({
-      ...current,
-      ...editForm,
-      profileImage: previewImage,
-    }))
+    try {
+      const formData = new FormData()
+      formData.append('name', editForm.name)
+      formData.append('username', editForm.username)
+      formData.append('email', editForm.email)
+      formData.append('bio', editForm.bio)
 
-    setIsEditOpen(false)
+      // Append file if a new one was selected
+      if (selectedFile) {
+        formData.append('profileImage', selectedFile)
+      }
+
+      const response = await axiosInstance.post('users/updateProfile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      const updatedUser = response.data.user || response.data.updatedUser || response.data
+
+      // Update local page state
+      setUserData((prev) => ({
+        ...prev,
+        ...updatedUser,
+      }))
+
+      // Update auth context state if helper exists
+      if (setUser) {
+        setUser((prev) => ({
+          ...prev,
+          ...updatedUser,
+        }))
+      }
+
+      setIsEditOpen(false)
+
+      // Redirect if username changed to match new route param
+      if (editForm.username !== username) {
+        navigate(`/profile/${editForm.username}`)
+      }
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleFollowToggle = async () => {
-    if (!userData || followLoading || isOwnProfile) {
-      return
-    }
+    if (!userData || followLoading || isOwnProfile) return
 
     setFollowLoading(true)
 
     try {
       const endpoint = isFollowing
-        ? `users/unfollow/${userData._id}`//123
+        ? `users/unfollow/${userData._id}`
         : `users/follow/${userData._id}`
 
       await axiosInstance.post(endpoint)
@@ -160,28 +197,25 @@ function Profile() {
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-          
           <div className="h-48 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 sm:h-64" />
-         
+
           <div className="px-6 pb-6 sm:px-10">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-16 sm:-mt-20 mb-6 gap-4">
+            <div className="-mt-16 mb-6 flex flex-col sm:-mt-20 sm:flex-row sm:items-end sm:justify-between gap-4">
               <div className="flex items-end space-x-5">
-                
-                {/* Main Profile Header Image with fallback initial letter */}
                 {userData.profileImage ? (
                   <img
                     src={userData.profileImage}
                     alt={userData.name}
-                    className="h-28 w-28 sm:h-36 sm:w-36 rounded-full border-4 border-white object-cover shadow-lg shrink-0"
+                    className="h-28 w-28 shrink-0 rounded-full border-4 border-white object-cover shadow-lg sm:h-36 sm:w-36"
                   />
                 ) : (
-                  <div className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full border-4 border-white bg-indigo-600 text-4xl sm:text-5xl font-black text-white shadow-lg shrink-0">
+                  <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-4 border-white bg-indigo-600 text-4xl font-black text-white shadow-lg sm:h-36 sm:w-36 sm:text-5xl">
                     {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
                   </div>
                 )}
 
                 <div className="mb-2">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
+                  <h1 className="text-2xl font-extrabold leading-tight text-slate-900 sm:text-3xl">
                     {userData.name}
                   </h1>
                   <p className="text-sm font-semibold text-indigo-600">@{userData.username}</p>
@@ -192,7 +226,7 @@ function Profile() {
                 {isOwnProfile ? (
                   <button
                     onClick={openEditProfile}
-                    className="flex-1 sm:flex-none rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95"
+                    className="flex-1 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 sm:flex-none"
                   >
                     Edit Profile
                   </button>
@@ -200,7 +234,7 @@ function Profile() {
                   <button
                     onClick={handleFollowToggle}
                     disabled={followLoading}
-                    className="flex-1 sm:flex-none rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex-1 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                   >
                     {followLoading ? 'Please wait...' : isFollowing ? 'Following' : 'Follow'}
                   </button>
@@ -215,14 +249,14 @@ function Profile() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-slate-100">
-              <div className="md:col-span-1 space-y-1">
+            <div className="grid grid-cols-1 gap-6 border-t border-slate-100 pt-2 md:grid-cols-3">
+              <div className="space-y-1 md:col-span-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account Details</p>
-                <p className="text-sm text-slate-600 truncate">{userData.email}</p>
+                <p className="truncate text-sm text-slate-600">{userData.email}</p>
                 <p className="text-xs text-slate-400">Member since {joinedDate}</p>
               </div>
 
-              <div className="md:col-span-2 flex justify-between sm:justify-end gap-8 text-center sm:text-right">
+              <div className="flex justify-between gap-8 text-center md:col-span-2 sm:justify-end sm:text-right">
                 <div>
                   <span className="block text-xl font-bold text-slate-900">{userData.posts?.length || 0}</span>
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Posts</span>
@@ -254,11 +288,13 @@ function Profile() {
                 }`}
               >
                 {tab.label}
-                <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${
-                  activeTab === tab.id
-                    ? 'bg-indigo-100 text-indigo-600'
-                    : 'bg-slate-200 text-slate-600'
-                }`}>
+                <span
+                  className={`rounded-md px-2 py-0.5 text-xs font-bold ${
+                    activeTab === tab.id
+                      ? 'bg-indigo-100 text-indigo-600'
+                      : 'bg-slate-200 text-slate-600'
+                  }`}
+                >
                   {tab.count}
                 </span>
               </button>
@@ -268,18 +304,18 @@ function Profile() {
 
         <div className="mt-8">
           {userData[activeTab]?.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
               {userData[activeTab].map((item, idx) => (
-                <div key={idx} className="aspect-square rounded-2xl bg-slate-200 border border-slate-100" />
+                <div key={idx} className="aspect-square rounded-2xl border border-slate-100 bg-slate-200" />
               ))}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 font-bold mb-3">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 font-bold text-indigo-600">
                 !
               </div>
               <h3 className="text-base font-bold text-slate-800">No {activeTab} yet</h3>
-              <p className="mt-1 text-xs text-slate-400 max-w-sm">
+              <p className="mt-1 max-w-sm text-xs text-slate-400">
                 When {userData.name} shares {activeTab}, they will show up here on their profile.
               </p>
             </div>
@@ -291,7 +327,7 @@ function Profile() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
+            if (event.target === event.currentTarget && !isSaving) {
               setIsEditOpen(false)
             }
           }}
@@ -303,15 +339,14 @@ function Profile() {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">Edit Profile</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Update your profile details
-                </p>
+                <p className="mt-1 text-sm text-slate-500">Update your profile details</p>
               </div>
 
               <button
                 type="button"
+                disabled={isSaving}
                 onClick={() => setIsEditOpen(false)}
-                className="text-2xl text-slate-400 hover:text-slate-700"
+                className="text-2xl text-slate-400 hover:text-slate-700 disabled:opacity-50"
               >
                 ×
               </button>
@@ -335,6 +370,7 @@ function Profile() {
                 <input
                   type="file"
                   accept="image/*"
+                  disabled={isSaving}
                   className="hidden"
                   onChange={handleImageChange}
                 />
@@ -348,7 +384,8 @@ function Profile() {
                   name="name"
                   value={editForm.name}
                   onChange={handleEditChange}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500"
+                  disabled={isSaving}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 disabled:bg-slate-100"
                 />
               </div>
 
@@ -358,7 +395,8 @@ function Profile() {
                   name="username"
                   value={editForm.username}
                   onChange={handleEditChange}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500"
+                  disabled={isSaving}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 disabled:bg-slate-100"
                 />
               </div>
 
@@ -369,7 +407,8 @@ function Profile() {
                   name="email"
                   value={editForm.email}
                   onChange={handleEditChange}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500"
+                  disabled={isSaving}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 disabled:bg-slate-100"
                 />
               </div>
 
@@ -380,8 +419,9 @@ function Profile() {
                   name="bio"
                   value={editForm.bio}
                   onChange={handleEditChange}
+                  disabled={isSaving}
                   placeholder="Tell people a little about yourself..."
-                  className="mt-1 w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500"
+                  className="mt-1 w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 disabled:bg-slate-100"
                 />
               </div>
             </div>
@@ -389,17 +429,19 @@ function Profile() {
             <div className="mt-6 flex gap-3">
               <button
                 type="button"
+                disabled={isSaving}
                 onClick={() => setIsEditOpen(false)}
-                className="flex-1 rounded-xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
-                className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700"
+                disabled={isSaving}
+                className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
               >
-                Save Changes
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>
