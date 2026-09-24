@@ -1,6 +1,8 @@
 import User from "../models/user.model.js"
 import bcrypt from 'bcrypt'
 import { genToken } from "../utils/generateToken.js"
+import uploadToCloudinary from "../utils/uploadCloudinary.js"
+
 
 // Register Controller
 
@@ -178,10 +180,74 @@ export const unFollowUser = async (req, res) => {
 }
 
 
-export const testUpload = async(req , res)=>{
-     try {
-        res.send(req.file)
-     } catch (error) {
-        
-     }
+// export const testUpload = async(req , res)=>{
+//      try {
+//         const image = await uploadToCloudinary(req.file.buffer)
+//         res.send(image)
+//      } catch (error) {
+
+//      }
+// }
+
+
+export const upadteProfile = async (req, res) => {
+    try {
+        const userId = req.user._id
+
+        const { name, bio, username, email } = req.body
+
+        if (!name?.trim() || !username?.trim() || !email?.trim()) {
+            return res.status(400).json({ message: "Name, username and email are required" });
+        }
+
+        const cleanUsername = username.trim();
+        const normalizedEmail = email.trim().toLowerCase();
+
+        if (await User.findOne({ username: cleanUsername, _id: { $ne: userId } })) {
+            return res.status(409).json({ message: "Username already exists" });
+        }
+
+        if (await User.findOne({ email: normalizedEmail, _id: { $ne: userId } })) {
+            return res.status(409).json({ message: "Email already exists" });
+        }
+
+
+
+
+
+        const updates = {
+            name: name,
+            username: cleanUsername,
+            email: normalizedEmail,
+            bio: bio || " "
+
+        }
+
+        if (req.file) {
+            const uploadedImage = await uploadToCloudinary(req.file.buffer)
+            updates.profileImage = uploadedImage.secure_url
+        }
+
+
+        let userUpdated = await User.findByIdAndUpdate(userId, updates)
+
+
+        res.status(201).json({message : "User Updated" , user : userUpdated})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    } catch (error) {
+
+    }
 }
