@@ -1,7 +1,20 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, AtSign, Camera, Check, Grid2x2, Link2, LogOut, Mail, PenLine, UserRound, Video, X } from 'lucide-react'
 import { axiosInstance } from '../axiosCalls/axios'
+import Avatar from '../components/ui/Avatar'
+import BottomNav from '../components/ui/BottomNav'
+import Field from '../components/ui/Field'
+import PageLoader from '../components/ui/PageLoader'
+import { profileCover } from '../data/demo'
+
+const compact = new Intl.NumberFormat('en', { notation: 'compact' })
+
+const softButton =
+  'flex h-12 items-center justify-center gap-2 rounded-full bg-soft px-4 text-[15px] font-semibold text-ink transition hover:bg-line disabled:cursor-not-allowed disabled:opacity-60'
+const inkButton =
+  'flex h-12 items-center justify-center gap-2 rounded-full bg-ink px-4 text-[15px] font-semibold text-white transition hover:bg-ink-soft active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60'
 
 function Profile() {
   const { user, setUser } = useAuth() // Assuming setUser is available to update auth state
@@ -14,6 +27,7 @@ function Profile() {
   const [activeTab, setActiveTab] = useState('posts')
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   const [editForm, setEditForm] = useState({
     name: '',
@@ -54,6 +68,18 @@ function Profile() {
       }
     }
   }, [previewImage])
+
+  // Close the edit sheet with Escape (unless a save is in flight)
+  useEffect(() => {
+    if (!isEditOpen) return
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !isSaving) setIsEditOpen(false)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isEditOpen, isSaving])
 
   const openEditProfile = () => {
     setEditForm({
@@ -180,12 +206,18 @@ function Profile() {
     }
   }
 
+  const handleShareProfile = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   if (!userData) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-      </div>
-    )
+    return <PageLoader />
   }
 
   const joinedDate = new Date(userData.createdAt).toLocaleDateString('en-US', {
@@ -193,139 +225,161 @@ function Profile() {
     year: 'numeric',
   })
 
+  const stats = [
+    { label: 'Followers', value: userData.followers?.length || 0 },
+    { label: 'Following', value: userData.followings?.length || 0 },
+    { label: 'Posts', value: userData.posts?.length || 0 },
+  ]
+
+  const tabs = [
+    { id: 'posts', label: 'Posts', icon: Grid2x2, count: userData.posts?.length || 0 },
+    { id: 'reels', label: 'Reels', icon: Video, count: userData.reels?.length || 0 },
+  ]
+
+  const items = userData[activeTab] || []
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-          <div className="h-48 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 sm:h-64" />
-
-          <div className="px-6 pb-6 sm:px-10">
-            <div className="-mt-16 mb-6 flex flex-col sm:-mt-20 sm:flex-row sm:items-end sm:justify-between gap-4">
-              <div className="flex items-end space-x-5">
-                {userData.profileImage ? (
-                  <img
-                    src={userData.profileImage}
-                    alt={userData.name}
-                    className="h-28 w-28 shrink-0 rounded-full border-4 border-white object-cover shadow-lg sm:h-36 sm:w-36"
-                  />
-                ) : (
-                  <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-4 border-white bg-indigo-600 text-4xl font-black text-white shadow-lg sm:h-36 sm:w-36 sm:text-5xl">
-                    {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
-                  </div>
-                )}
-
-                <div className="mb-2">
-                  <h1 className="text-2xl font-extrabold leading-tight text-slate-900 sm:text-3xl">
-                    {userData.name}
-                  </h1>
-                  <p className="text-sm font-semibold text-indigo-600">@{userData.username}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {isOwnProfile ? (
-                  <button
-                    onClick={openEditProfile}
-                    className="flex-1 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 sm:flex-none"
-                  >
-                    Edit Profile
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleFollowToggle}
-                    disabled={followLoading}
-                    className="flex-1 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
-                  >
-                    {followLoading ? 'Please wait...' : isFollowing ? 'Following' : 'Follow'}
-                  </button>
-                )}
-
-                <button className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-600 transition-all hover:bg-slate-100 active:scale-95">
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-.326 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.724-3.35 0a1.724 1.724 0 00-2.573-1.066c-.94-1.543-.326-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 border-t border-slate-100 pt-2 md:grid-cols-3">
-              <div className="space-y-1 md:col-span-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account Details</p>
-                <p className="truncate text-sm text-slate-600">{userData.email}</p>
-                <p className="text-xs text-slate-400">Member since {joinedDate}</p>
-              </div>
-
-              <div className="flex justify-between gap-8 text-center md:col-span-2 sm:justify-end sm:text-right">
-                <div>
-                  <span className="block text-xl font-bold text-slate-900">{userData.posts?.length || 0}</span>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Posts</span>
-                </div>
-                <div>
-                  <span className="block text-xl font-bold text-slate-900">{userData.followers?.length || 0}</span>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Followers</span>
-                </div>
-                <div>
-                  <span className="block text-xl font-bold text-slate-900">{userData.followings?.length || 0}</span>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Following</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex border-t border-slate-100 bg-slate-50/50 px-6">
-            {[
-              { id: 'posts', label: 'Posts', count: userData.posts?.length || 0 },
-              { id: 'reels', label: 'Reels', count: userData.reels?.length || 0 },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 border-b-2 px-6 py-4 text-sm font-semibold transition-all ${
-                  activeTab === tab.id
-                    ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                {tab.label}
-                <span
-                  className={`rounded-md px-2 py-0.5 text-xs font-bold ${
-                    activeTab === tab.id
-                      ? 'bg-indigo-100 text-indigo-600'
-                      : 'bg-slate-200 text-slate-600'
-                  }`}
-                >
-                  {tab.count}
-                </span>
+    <div className="min-h-dvh bg-canvas pb-36">
+      <div className="mx-auto max-w-3xl">
+        {/* Cover */}
+        <div className="relative h-52 overflow-hidden rounded-b-[36px] bg-ink sm:mx-4 sm:mt-4 sm:h-64 sm:rounded-[36px]">
+          <img src={profileCover} alt="" className="h-full w-full object-cover opacity-80 grayscale" />
+          <div className="absolute inset-x-4 top-4 flex justify-between">
+            <button type="button" onClick={() => navigate('/home')} aria-label="Back to feed" className="glass-dark flex h-11 w-11 items-center justify-center rounded-full text-white">
+              <ArrowLeft size={20} aria-hidden="true" />
+            </button>
+            {isOwnProfile && (
+              <button type="button" disabled title="Logout is not available yet" aria-label="Logout (not available yet)" className="glass-dark flex h-11 w-11 items-center justify-center rounded-full text-white/60">
+                <LogOut size={18} aria-hidden="true" />
               </button>
-            ))}
+            )}
           </div>
         </div>
 
-        <div className="mt-8">
-          {userData[activeTab]?.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-              {userData[activeTab].map((item, idx) => (
-                <div key={idx} className="aspect-square rounded-2xl border border-slate-100 bg-slate-200" />
-              ))}
+        {/* Identity */}
+        <section className="px-5 text-center">
+          <div className="relative mx-auto -mt-16 w-fit">
+            <Avatar
+              src={userData.profileImage}
+              name={userData.name}
+              size="h-32 w-32 text-4xl"
+              className="border-[5px] border-canvas shadow-lg"
+            />
+            {isOwnProfile && (
+              <button type="button" onClick={openEditProfile} aria-label="Change profile photo" className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-canvas bg-ink text-white">
+                <Camera size={15} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+
+          <h1 className="mt-3 text-[28px] font-semibold leading-tight tracking-tight">{userData.name}</h1>
+          <p className="text-[15px] font-semibold text-ochre-deep">@{userData.username}</p>
+          {userData.bio ? (
+            <p className="mx-auto mt-2 max-w-sm text-[15px] font-medium leading-relaxed text-muted">{userData.bio}</p>
+          ) : (
+            isOwnProfile && <p className="mx-auto mt-2 max-w-sm text-[15px] font-medium text-muted">Add a bio so people know what you&apos;re about.</p>
+          )}
+          <p className="mt-1 text-xs font-medium text-muted">Joined {joinedDate}</p>
+
+          <dl className="mx-auto mt-6 grid max-w-md grid-cols-3 divide-x divide-line">
+            {stats.map((stat) => (
+              <div key={stat.label} className="flex flex-col-reverse">
+                <dt className="text-sm font-medium text-muted">{stat.label}</dt>
+                <dd className="text-xl font-semibold tabular-nums">{compact.format(stat.value)}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="mx-auto mt-6 grid max-w-md grid-cols-3 gap-2">
+            {isOwnProfile ? (
+              <button type="button" onClick={openEditProfile} className={`${inkButton} col-span-2`}>
+                <PenLine size={17} aria-hidden="true" />
+                Edit profile
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleFollowToggle}
+                  disabled={followLoading}
+                  aria-pressed={isFollowing}
+                  className={isFollowing ? softButton : inkButton}
+                >
+                  {followLoading ? 'Wait...' : isFollowing ? 'Following' : 'Follow'}
+                </button>
+                <button type="button" disabled title="Messaging is coming soon" className={softButton}>
+                  Message
+                </button>
+              </>
+            )}
+            <button type="button" onClick={handleShareProfile} className={softButton} aria-live="polite">
+              {linkCopied ? <Check size={17} aria-hidden="true" /> : <Link2 size={17} aria-hidden="true" />}
+              {linkCopied ? 'Copied' : 'Share'}
+            </button>
+          </div>
+        </section>
+
+        {/* Tabs */}
+        <div role="tablist" aria-label="Profile content" className="mx-auto mt-8 flex max-w-md border-b border-line px-5">
+          {tabs.map(({ id, label, icon: Icon, count }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              onClick={() => setActiveTab(id)}
+              className={`-mb-px flex h-12 flex-1 items-center justify-center gap-2 border-b-2 text-sm font-semibold transition ${
+                activeTab === id ? 'border-ink text-ink' : 'border-transparent text-muted hover:text-ink'
+              }`}
+            >
+              <Icon size={18} aria-hidden="true" />
+              {label}
+              <span className="tabular-nums text-muted">{count}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Media */}
+        <section role="tabpanel" className="mt-4 px-4">
+          {items.length > 0 ? (
+            <div className="columns-2 gap-3 sm:columns-3">
+              {items.map((item, idx) => {
+                const src = item?.image || item?.mediaUrl || item?.url
+                const shape = idx % 3 === 0 ? 'aspect-[3/4]' : 'aspect-square'
+
+                return src ? (
+                  <img key={idx} src={src} alt="" loading="lazy" className={`${shape} mb-3 w-full break-inside-avoid rounded-3xl bg-ochre-light object-cover`} />
+                ) : (
+                  <div key={idx} className={`${shape} mb-3 break-inside-avoid rounded-3xl bg-gradient-to-br from-ochre-light to-ochre`} />
+                )
+              })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 font-bold text-indigo-600">
-                !
+            <div className="mx-auto max-w-md rounded-[28px] bg-surface p-10 text-center shadow-sm">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-soft text-ochre-deep">
+                {activeTab === 'posts' ? <Grid2x2 size={22} aria-hidden="true" /> : <Video size={22} aria-hidden="true" />}
               </div>
-              <h3 className="text-base font-bold text-slate-800">No {activeTab} yet</h3>
-              <p className="mt-1 max-w-sm text-xs text-slate-400">
-                When {userData.name} shares {activeTab}, they will show up here on their profile.
+              <h2 className="mt-4 text-lg font-semibold">No {activeTab} yet</h2>
+              <p className="mt-1 text-sm font-medium text-muted">
+                {isOwnProfile
+                  ? `Share your first ${activeTab === 'posts' ? 'post' : 'reel'} from the home feed.`
+                  : `When ${userData.name} shares ${activeTab}, they will show up here.`}
               </p>
+              {isOwnProfile && (
+                <Link to="/home" className={`${inkButton} mx-auto mt-5 w-fit px-6`}>
+                  Go to feed
+                </Link>
+              )}
             </div>
           )}
-        </div>
+        </section>
       </div>
+
+      <BottomNav active={isOwnProfile ? 'profile' : undefined} />
 
       {isEditOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/60 backdrop-blur-sm sm:items-center sm:p-4"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget && !isSaving) {
               setIsEditOpen(false)
@@ -333,115 +387,70 @@ function Profile() {
           }}
         >
           <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-profile-title"
             onSubmit={handleEditSubmit}
-            className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl sm:p-8"
+            className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[36px] bg-surface px-6 pb-8 pt-3 shadow-2xl sm:max-w-lg sm:rounded-[36px] sm:p-8"
           >
+            <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line sm:hidden" aria-hidden="true" />
+
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Edit Profile</h2>
-                <p className="mt-1 text-sm text-slate-500">Update your profile details</p>
+                <h2 id="edit-profile-title" className="text-2xl font-semibold tracking-tight">Edit profile</h2>
+                <p className="mt-0.5 text-sm font-medium text-muted">Update your profile details</p>
               </div>
 
               <button
                 type="button"
                 disabled={isSaving}
                 onClick={() => setIsEditOpen(false)}
-                className="text-2xl text-slate-400 hover:text-slate-700 disabled:opacity-50"
+                aria-label="Close"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-soft text-ink-soft transition hover:bg-line disabled:opacity-50"
               >
-                ×
+                <X size={20} aria-hidden="true" />
               </button>
             </div>
 
             <div className="mb-6 flex flex-col items-center">
-              {previewImage ? (
-                <img
-                  src={previewImage}
-                  alt="Profile preview"
-                  className="h-28 w-28 rounded-full object-cover shadow-lg"
-                />
-              ) : (
-                <div className="flex h-28 w-28 items-center justify-center rounded-full bg-indigo-600 text-4xl font-black text-white">
-                  {editForm.name ? editForm.name.charAt(0).toUpperCase() : 'U'}
-                </div>
-              )}
+              <Avatar src={previewImage} name={editForm.name} size="h-28 w-28 text-4xl" className="shadow-lg" />
 
-              <label className="mt-3 cursor-pointer rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">
-                Change Photo
+              <label className="mt-3 flex h-10 cursor-pointer items-center gap-2 rounded-full bg-soft px-4 text-sm font-semibold transition hover:bg-line">
+                <Camera size={16} aria-hidden="true" />
+                Change photo
                 <input
                   type="file"
                   accept="image/*"
                   disabled={isSaving}
-                  className="hidden"
+                  className="sr-only"
                   onChange={handleImageChange}
                 />
               </label>
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold text-slate-700">Name</label>
-                <input
-                  name="name"
-                  value={editForm.name}
-                  onChange={handleEditChange}
-                  disabled={isSaving}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 disabled:bg-slate-100"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-slate-700">Username</label>
-                <input
-                  name="username"
-                  value={editForm.username}
-                  onChange={handleEditChange}
-                  disabled={isSaving}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 disabled:bg-slate-100"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-slate-700">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={editForm.email}
-                  onChange={handleEditChange}
-                  disabled={isSaving}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 disabled:bg-slate-100"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-slate-700">Bio</label>
-                <textarea
-                  rows="3"
-                  name="bio"
-                  value={editForm.bio}
-                  onChange={handleEditChange}
-                  disabled={isSaving}
-                  placeholder="Tell people a little about yourself..."
-                  className="mt-1 w-full resize-none rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 disabled:bg-slate-100"
-                />
-              </div>
+              <Field id="edit-name" label="Name" icon={UserRound} name="name" value={editForm.name} onChange={handleEditChange} disabled={isSaving} />
+              <Field id="edit-username" label="Username" icon={AtSign} name="username" value={editForm.username} onChange={handleEditChange} disabled={isSaving} />
+              <Field id="edit-email" label="Email" icon={Mail} type="email" name="email" value={editForm.email} onChange={handleEditChange} disabled={isSaving} />
+              <Field
+                id="edit-bio"
+                label="Bio"
+                textarea
+                rows="3"
+                name="bio"
+                value={editForm.bio}
+                onChange={handleEditChange}
+                disabled={isSaving}
+                placeholder="Tell people a little about yourself..."
+              />
             </div>
 
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={() => setIsEditOpen(false)}
-                className="flex-1 rounded-xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >
+            <div className="mt-7 grid grid-cols-2 gap-3">
+              <button type="button" disabled={isSaving} onClick={() => setIsEditOpen(false)} className={softButton}>
                 Cancel
               </button>
-
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="flex-1 rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {isSaving ? 'Saving...' : 'Save Changes'}
+              <button type="submit" disabled={isSaving} className={inkButton}>
+                {isSaving ? 'Saving...' : 'Save changes'}
               </button>
             </div>
           </form>

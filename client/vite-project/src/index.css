@@ -1,1 +1,100 @@
 @import "tailwindcss";
+
+/* Design tokens — warm ochre + glass, based on the Babagang reference. */
+@theme {
+  --font-sans: "Urbanist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-canvas: #F6F4F1;
+  --color-surface: #FFFFFF;
+  --color-soft: #F1ECE6;
+  --color-line: #E6DFD7;
+
+  --color-ink: #1E1915;
+  --color-ink-soft: #4A423C;
+  --color-muted: #6E645D;
+
+  --color-ochre: #B98A4B;
+  --color-ochre-light: #E9DCC8;
+  --color-ochre-deep: #8A602E;
+  --color-maroon: #5B2A26;
+
+  --color-live: #E5484D;
+  --color-verified: #3B8BF6;
+  --color-danger: #B42318;
+  --color-danger-soft: #FDECEC;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+  }
+
+  button:not(:disabled),
+  [role="button"],
+  label[for],
+  a {
+    cursor: pointer;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ochre-deep);
+    outline-offset: 2px;
+  }
+}
+
+/* Frosted overlays used on photos, the landing CTA and the floating nav. */
+@utility glass-dark {
+  background-color: rgb(30 25 21 / 0.5);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgb(255 255 255 / 0.12);
+
+  & :focus-visible,
+  &:focus-visible {
+    outline-color: #fff;
+  }
+}
+
+@utility glass-light {
+  background-color: rgb(255 255 255 / 0.22);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgb(255 255 255 / 0.28);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes nudge {
+  0%, 100% { transform: translateX(0); opacity: 0.7; }
+  50% { transform: translateX(4px); opacity: 1; }
+}
+
+@utility animate-nudge {
+  animation: nudge 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

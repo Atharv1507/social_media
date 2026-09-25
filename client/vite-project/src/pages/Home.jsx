@@ -1,162 +1,145 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Bell, Clapperboard, ImagePlus, LayoutGrid, Paperclip, Plus, X } from 'lucide-react'
 
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from '../context/AuthContext'
+import Avatar from '../components/ui/Avatar'
+import BottomNav from '../components/ui/BottomNav'
+import PostCard from '../components/feed/PostCard'
+import { posts, stories, suggestions } from '../data/demo'
 
-const stories = [
-  { name: "Your Story", initials: "You", tone: "from-indigo-500 to-violet-500" },
-  { name: "Ananya", initials: "AN", tone: "from-pink-500 to-rose-500" },
-  { name: "Rohan", initials: "RO", tone: "from-cyan-500 to-blue-500" },
-  { name: "Priya", initials: "PR", tone: "from-amber-400 to-orange-500" },
-  { name: "Arjun", initials: "AR", tone: "from-emerald-400 to-teal-500" },
-];
-
-function Avatar({ initials, tone = "from-slate-700 to-slate-900", size = "h-11 w-11" }) {
-  return (
-    <div className={`flex ${size} shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${tone} text-xs font-bold text-white ring-2 ring-white`}>
-      {initials}
-    </div>
-  );
-}
+const compact = new Intl.NumberFormat('en', { notation: 'compact' })
 
 function Home() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth()
   // UI-only composer. Post and reel APIs will be connected in class.
-  const [contentType, setContentType] = useState("post");
-  const [caption, setCaption] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [contentType, setContentType] = useState('post')
+  const [caption, setCaption] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null)
 
   const handleContentTypeChange = (type) => {
-    setContentType(type);
-    setSelectedFile(null);
-  };
+    setContentType(type)
+    setSelectedFile(null)
+  }
 
-  const getInitials = (name) =>
-    name?.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "U";
+  const firstName = user?.name?.split(' ')[0] || 'there'
+  const profilePath = `/profile/${user?.username}`
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] text-slate-900">
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <button onClick={() => navigate("/home")} className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-sm font-black text-white shadow-sm">
-              S
-            </div>
-            <div className="hidden text-left sm:block">
-              <p className="text-base font-black tracking-tight">SST Social</p>
-              <p className="text-[11px] text-slate-500">Your circle, your feed.</p>
-            </div>
+    <div className="min-h-dvh bg-canvas pb-36">
+      <header className="sticky top-0 z-30 bg-canvas/85 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-3">
+          <button type="button" aria-label="Menu" className="flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink shadow-sm transition hover:shadow-md">
+            <LayoutGrid size={20} aria-hidden="true" />
           </button>
-
-          <div className="hidden w-72 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-500 md:flex">
-            <span className="text-base">⌕</span>
-            <span>Search people or posts</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button className="rounded-full p-2.5 text-slate-500 transition hover:bg-slate-100" aria-label="Notifications">♡</button>
-            <button
-              onClick={() => navigate(`/profile/${user?.username}`)}
-              className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 transition hover:border-slate-300 hover:shadow-sm"
-            >
-              <Avatar initials={getInitials(user?.name)} tone="from-indigo-500 to-violet-500" size="h-8 w-8" />
-              <span className="hidden text-sm font-semibold sm:block">{user?.name || "You"}</span>
-            </button>
-            <button type="button" disabled title="Logout is not available yet" className="hidden rounded-full px-3 py-2 text-sm font-semibold text-slate-400 sm:block">Logout</button>
-          </div>
+          <Link to="/home" className="text-2xl font-medium tracking-tight">SST Social</Link>
+          <button type="button" aria-label="Notifications" className="relative flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink shadow-sm transition hover:shadow-md">
+            <Bell size={20} aria-hidden="true" />
+            <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full border-2 border-surface bg-live" />
+          </button>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[240px_minmax(0,1fr)_280px]">
-        <aside className="hidden lg:block">
-          <div className="sticky top-24 space-y-4">
-            <div className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
-              <button className="flex w-full items-center gap-3 rounded-2xl bg-indigo-50 px-4 py-3 text-left">
-                <span className="text-lg">⌂</span>
-                <span className="text-sm font-bold text-indigo-700">Home Feed</span>
-              </button>
-              <button onClick={() => navigate(`/profile/${user?.username}`)} className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-slate-600 transition hover:bg-slate-50">
-                <span className="text-lg">◉</span>
-                <span className="text-sm font-semibold">My Profile</span>
-              </button>
-              <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-slate-600 transition hover:bg-slate-50">
-                <span className="text-lg">♡</span>
-                <span className="text-sm font-semibold">Notifications</span>
-              </button>
-              <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-slate-600 transition hover:bg-slate-50">
-                <span className="text-lg">⌁</span>
-                <span className="text-sm font-semibold">Explore</span>
-              </button>
+      <div className="mx-auto grid max-w-6xl grid-cols-1 justify-center gap-8 xl:grid-cols-[260px_minmax(0,36rem)_260px]">
+        {/* Left rail: your mini profile (desktop only) */}
+        <aside className="hidden xl:block">
+          <div className="sticky top-24 overflow-hidden rounded-[28px] bg-surface shadow-sm">
+            <div className="h-20 bg-ochre" />
+            <div className="-mt-9 px-5 pb-5 text-center">
+              <Avatar src={user?.profileImage} name={user?.name} size="h-[72px] w-[72px] text-2xl" className="mx-auto border-4 border-surface" />
+              <p className="mt-2 truncate text-lg font-semibold">{user?.name}</p>
+              <p className="truncate text-sm font-medium text-ochre-deep">@{user?.username}</p>
+              <dl className="mt-4 grid grid-cols-2 divide-x divide-line">
+                <div>
+                  <dt className="text-xs font-medium text-muted">Followers</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{compact.format(user?.followers?.length || 0)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-muted">Following</dt>
+                  <dd className="text-lg font-semibold tabular-nums">{compact.format(user?.followings?.length || 0)}</dd>
+                </div>
+              </dl>
+              <Link to={profilePath} className="mt-4 flex h-11 items-center justify-center rounded-full bg-soft text-sm font-semibold transition hover:bg-line">
+                View profile
+              </Link>
             </div>
           </div>
         </aside>
 
-        <section className="min-w-0">
-          <div className="mb-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between px-5 py-4">
-              <div>
-                <h1 className="text-xl font-black tracking-tight">Your Feed</h1>
-                <p className="mt-1 text-xs text-slate-500">See what your circle is up to.</p>
-              </div>
-              <button className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600">Latest ↓</button>
-            </div>
-            <div className="flex gap-4 overflow-x-auto border-t border-slate-100 px-5 py-4 scrollbar-hide">
-              {stories.map((story, index) => (
-                <button key={story.name} className="group flex w-[76px] shrink-0 flex-col items-center gap-2">
-                  <div className={`rounded-full bg-gradient-to-br ${story.tone} p-[3px] transition group-hover:scale-105`}>
-                    <div className="rounded-full bg-white p-[2px]">
-                      <Avatar initials={index === 0 ? getInitials(user?.name) : story.initials} tone={story.tone} size="h-12 w-12" />
-                    </div>
-                  </div>
-                  <span className="w-full truncate text-center text-[11px] font-semibold text-slate-600">{index === 0 ? "Your Story" : story.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+        <main className="min-w-0 px-4 xl:px-0">
+          {/* Stories */}
+          <section aria-label="Stories" className="no-scrollbar -mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 pt-1 xl:mx-0 xl:scroll-px-0 xl:px-0">
+            <Link to={profilePath} className="flex w-[76px] shrink-0 snap-start flex-col items-center gap-2">
+              <span className="relative rounded-full p-[3px] ring-2 ring-line">
+                <Avatar src={user?.profileImage} name={user?.name} size="h-[64px] w-[64px] text-xl" />
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-canvas bg-ochre text-white">
+                  <Plus size={14} strokeWidth={3} aria-hidden="true" />
+                </span>
+              </span>
+              <span className="w-full truncate text-center text-sm font-medium">Your story</span>
+            </Link>
+
+            {stories.map((story) => (
+              <button key={story.name} type="button" className="group flex w-[76px] shrink-0 snap-start flex-col items-center gap-2">
+                <span className="relative rounded-full bg-gradient-to-tr from-ochre to-maroon p-[3px] transition-transform duration-200 group-hover:scale-105">
+                  <img src={story.image} alt="" className="h-[64px] w-[64px] rounded-full border-[3px] border-canvas object-cover" />
+                  {story.live && (
+                    <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full border-2 border-canvas bg-ink px-2 py-px text-[11px] font-semibold text-white">
+                      Live
+                    </span>
+                  )}
+                </span>
+                <span className="w-full truncate text-center text-sm font-medium">{story.name}</span>
+              </button>
+            ))}
+          </section>
 
           {/* Post and reel composer UI; publishing will be connected in class. */}
-          <form
-            onSubmit={(event) => event.preventDefault()}
-            className="mb-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
-          >
-            <div className="flex items-start gap-3">
-              <Avatar initials={getInitials(user?.name)} tone="from-indigo-500 to-violet-500" />
-
+          <form onSubmit={(event) => event.preventDefault()} className="mt-4 rounded-[28px] bg-surface p-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Avatar src={user?.profileImage} name={user?.name} size="h-11 w-11 text-sm" />
+              <label htmlFor="composer" className="sr-only">Write a caption</label>
               <textarea
+                id="composer"
                 value={caption}
                 onChange={(event) => setCaption(event.target.value)}
                 maxLength={500}
-                rows={2}
-                placeholder={`What's on your mind, ${user?.name?.split(" ")[0] || "there"}?`}
-                className="flex-1 resize-none rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:bg-slate-100"
+                rows={1}
+                placeholder={`What's on your mind, ${firstName}?`}
+                className="min-h-11 flex-1 resize-none rounded-2xl bg-soft px-4 py-2.5 text-[15px] font-medium outline-none ring-ochre transition placeholder:text-muted focus:bg-surface focus:ring-2"
               />
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-              <button
-                type="button"
-                onClick={() => handleContentTypeChange("post")}
-                className={contentType === "post" ? "rounded-xl bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700" : "rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50"}
-              >
-                ▧ Post
-              </button>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div role="radiogroup" aria-label="Content type" className="flex rounded-full bg-soft p-1">
+                {[
+                  { id: 'post', label: 'Post', icon: ImagePlus },
+                  { id: 'reel', label: 'Reel', icon: Clapperboard },
+                ].map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={contentType === id}
+                    onClick={() => handleContentTypeChange(id)}
+                    className={`flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold transition ${
+                      contentType === id ? 'bg-ink text-white' : 'text-ink-soft hover:text-ink'
+                    }`}
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-              <button
-                type="button"
-                onClick={() => handleContentTypeChange("reel")}
-                className={contentType === "reel" ? "rounded-xl bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700" : "rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50"}
-              >
-                ▶ Reel
-              </button>
-
-              <label className="cursor-pointer rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-50">
-                {contentType === "post" ? "Choose Image" : "Choose Video"}
+              <label title={contentType === 'post' ? 'Choose image' : 'Choose video'} className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-ochre-deep transition hover:bg-soft">
+                <Paperclip size={19} aria-hidden="true" />
+                <span className="sr-only">{contentType === 'post' ? 'Choose image' : 'Choose video'}</span>
                 <input
                   type="file"
-                  accept={contentType === "post" ? "image/*" : "video/*"}
+                  accept={contentType === 'post' ? 'image/*' : 'video/*'}
                   onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-                  className="hidden"
+                  className="sr-only"
                 />
               </label>
 
@@ -164,79 +147,55 @@ function Home() {
                 type="submit"
                 disabled
                 title="Publishing will be added in class"
-                className="ml-auto rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="ml-auto h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white transition hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {contentType === "post" ? "Create Post" : "Create Reel"}
+                Share
               </button>
             </div>
 
             {selectedFile && (
-              <p className="mt-2 text-xs text-slate-500">Selected: {selectedFile.name}</p>
+              <div className="mt-3 flex items-center gap-2 rounded-2xl bg-soft px-3 py-2 text-sm font-medium text-ink-soft">
+                <span className="min-w-0 flex-1 truncate">{selectedFile.name}</span>
+                <button type="button" aria-label="Remove file" onClick={() => setSelectedFile(null)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-line">
+                  <X size={16} aria-hidden="true" />
+                </button>
+              </div>
             )}
-
-
           </form>
 
-          {/* Static preview: replace this card with API data during the feed lesson. */}
-          <div className="space-y-5">
-            <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <Avatar initials="SS" tone="from-pink-500 to-rose-500" />
-                  <div>
-                    <p className="text-sm font-bold">SST Social</p>
-                    <p className="text-xs text-slate-400">@sstsocial · Just now</p>
-                  </div>
-                </div>
-                <button type="button" className="rounded-full px-2 py-1 text-lg leading-none text-slate-400 hover:bg-slate-50">•••</button>
-              </div>
-              <div className="flex min-h-72 items-center justify-center bg-gradient-to-br from-indigo-500 via-violet-500 to-pink-500 px-8 text-center text-3xl font-black text-white sm:min-h-96">
-                Your circle, your feed.
-              </div>
-              <div className="px-5 pb-5 pt-4">
-                <p className="text-sm leading-6 text-slate-700">Welcome to SST Social! Posts and reels from your circle will appear here soon.</p>
-                <div className="mt-4 flex items-center justify-between text-xs text-slate-400">
-                  <span>0 likes</span><span>0 comments</span>
-                </div>
-                <div className="mt-4 flex border-t border-slate-100 pt-3">
-                  <button type="button" className="flex-1 rounded-xl py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">♡ Like</button>
-                  <button type="button" className="flex-1 rounded-xl py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">◌ Comment</button>
-                  <button type="button" className="flex-1 rounded-xl py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">↗ Share</button>
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
+          {/* Static preview: replace these cards with API data during the feed lesson. */}
+          <section aria-label="Feed" className="mt-5 space-y-5">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </section>
+        </main>
 
-        <aside className="hidden lg:block">
-          <div className="sticky top-24 space-y-5">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-black">People to follow</h2>
-                <button className="text-xs font-bold text-indigo-600">See all</button>
-              </div>
-              <div className="mt-4 space-y-4">
-                {[
-                  ["Priya Nair", "priyanair", "PN", "from-amber-400 to-orange-500"],
-                  ["Arjun Kapoor", "arjunk", "AK", "from-emerald-400 to-teal-500"],
-                  ["Meera Das", "meerad", "MD", "from-fuchsia-500 to-purple-500"],
-                ].map(([name, handle, initials, tone]) => (
-                  <div key={handle} className="flex items-center gap-3">
-                    <Avatar initials={initials} tone={tone} size="h-10 w-10" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold">{name}</p>
-                      <p className="truncate text-xs text-slate-400">@{handle}</p>
-                    </div>
-                    <button className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">Follow</button>
+        {/* Right rail: suggestions (desktop only) */}
+        <aside className="hidden xl:block">
+          <div className="sticky top-24 rounded-[28px] bg-surface p-5 shadow-sm">
+            <h2 className="text-base font-semibold">Suggested for you</h2>
+            <ul className="mt-4 space-y-4">
+              {suggestions.map((person) => (
+                <li key={person.handle} className="flex items-center gap-3">
+                  <Avatar src={person.avatar} name={person.name} size="h-11 w-11" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{person.name}</p>
+                    <p className="truncate text-xs font-medium text-muted">@{person.handle}</p>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <button type="button" className="h-9 rounded-full bg-soft px-4 text-xs font-bold transition hover:bg-ink hover:text-white">
+                    Follow
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </aside>
-      </main>
+      </div>
+
+      <BottomNav active="home" />
     </div>
-  );
+  )
 }
 
-export default Home;
+export default Home
