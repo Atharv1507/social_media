@@ -20,7 +20,7 @@ function Avatar({ initials, tone = "from-slate-700 to-slate-900", size = "h-11 w
 }
 
 function Home() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   // UI-only composer. Post and reel APIs will be connected in class.
   const [contentType, setContentType] = useState("post");
@@ -63,7 +63,7 @@ function Home() {
               <Avatar initials={getInitials(user?.name)} tone="from-indigo-500 to-violet-500" size="h-8 w-8" />
               <span className="hidden text-sm font-semibold sm:block">{user?.name || "You"}</span>
             </button>
-            <button onClick={handleLogout} className="hidden rounded-full px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 sm:block">Logout</button>
+            <button type="button" disabled title="Logout is not available yet" className="hidden rounded-full px-3 py-2 text-sm font-semibold text-slate-400 sm:block">Logout</button>
           </div>
         </div>
       </header>
