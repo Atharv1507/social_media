@@ -7,13 +7,15 @@ const compact = new Intl.NumberFormat('en', { notation: 'compact' })
 // Full-bleed photo card with glass author chip and stats over a bottom scrim.
 function PostCard({ post }) {
   const [liked, setLiked] = useState(false)
-  const likes = post.likes + (liked ? 1 : 0)
+  const { name, username, profileImage } = post.author || {}
+  const likes = (post.likes?.length ?? 0) + (liked ? 1 : 0)
+  const time = post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ''
 
   return (
     <article className="relative aspect-[4/5] overflow-hidden rounded-[32px] bg-ochre-light shadow-sm">
       <img
         src={post.image}
-        alt={`Post by ${post.author}`}
+        alt={`Post by ${name}`}
         loading="lazy"
         width="900"
         height="1125"
@@ -22,13 +24,13 @@ function PostCard({ post }) {
 
       <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-3">
         <div className="glass-dark flex min-w-0 items-center gap-2.5 rounded-full p-1.5 pr-4 text-white">
-          <Avatar src={post.avatar} name={post.author} size="h-10 w-10" />
+          <Avatar src={profileImage} name={name} size="h-10 w-10" />
           <div className="min-w-0">
             <p className="flex items-center gap-1 truncate text-[15px] font-semibold leading-tight">
-              {post.author}
+              {name}
               <BadgeCheck size={16} className="shrink-0 fill-verified text-white" aria-label="Verified" />
             </p>
-            <p className="truncate text-xs font-medium text-white/80">@{post.handle} · {post.time}</p>
+            <p className="truncate text-xs font-medium text-white/80">@{username} · {time}</p>
           </div>
         </div>
         <button type="button" aria-label="More options" className="glass-dark flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white">
@@ -50,18 +52,18 @@ function PostCard({ post }) {
           </button>
           <button type="button" aria-label="Comments" className="flex h-11 items-center gap-1.5 rounded-full px-2.5 text-sm font-semibold tabular-nums transition hover:bg-white/10">
             <MessageCircle size={20} aria-hidden="true" />
-            {compact.format(post.comments)}
+            {compact.format(post.comments ?? 0)}
           </button>
           <button type="button" aria-label="Share" className="flex h-11 items-center gap-1.5 rounded-full px-2.5 text-sm font-semibold tabular-nums transition hover:bg-white/10">
             <Send size={19} aria-hidden="true" />
-            {compact.format(post.shares)}
+            {compact.format(post.shares ?? 0)}
           </button>
         </div>
         <p className="mt-1 px-2.5 text-[15px] font-medium leading-snug">
           {post.caption}{' '}
-          {post.tags.map((tag) => (
+          {/* {post.tags.map((tag) => (
             <span key={tag} className="text-white/85">#{tag} </span>
-          ))}
+          ))} */}
         </p>
       </div>
     </article>

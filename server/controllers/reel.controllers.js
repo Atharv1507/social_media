@@ -39,3 +39,42 @@ export const createReel = async (req,res)=>{
         res.status(500).json({message: error.message})
     }
 }
+export const getReels=async (req,res)=>{
+    try{
+        const reels=await Reel.find({}).populate('author','name username profileImage')
+        if (!reels){
+            return res.status(404).json({message:"No post found"})
+        }
+        return res.status(200).json(reels)
+
+    }
+    catch(error){
+    res.status(500).json({error})
+    }
+}
+export const updateReelLikes = async (req,res)=>{
+    try{
+        const reelId= req.params.id
+        const reel =await Reel.findById(reelId)
+        const userId = req.user._id
+
+        if(!reel){
+            return res.status(404).json({message:"Reel not found"})
+        }
+
+        const alreadyLiked= reel.likes.some((id)=> id.toString()===userId.toString())
+        if(alreadyLiked){
+            reel.likes.pull(userId)
+        }
+        else{
+            reel.likes.push(userId)
+        }
+        await reel.save()
+
+        return res.status(200).json({message:alreadyLiked?"Unliked":"liked", count:reel.likes.length})
+    }
+    catch(error){
+        console.log(error)
+        return res.status(500).json({message: error.message})
+    }
+}

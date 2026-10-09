@@ -1,26 +1,76 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bell, Clapperboard, ImagePlus, LayoutGrid, Paperclip, Plus, X } from 'lucide-react'
-
+import {useDispatch, useSelector} from 'react-redux'
 import { useAuth } from '../context/AuthContext'
 import Avatar from '../components/ui/Avatar'
 import BottomNav from '../components/ui/BottomNav'
 import PostCard from '../components/feed/PostCard'
-import { posts, stories, suggestions } from '../data/demo'
+import {stories, suggestions } from '../data/demo'
+import { axiosInstance } from '../axiosCalls/axios'
+import { useEffect } from 'react'
+import { setPostsRedux, addPostRedux } from '../redux/postSlice'
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact' })
 
 function Home() {
   const { user } = useAuth()
-  // UI-only composer. Post and reel APIs will be connected in class.
+  const posts = useSelector((state) => state.post.items)
   const [contentType, setContentType] = useState('post')
   const [caption, setCaption] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
-
+  const dispatch =useDispatch()
   const handleContentTypeChange = (type) => {
     setContentType(type)
     setSelectedFile(null)
   }
+  const handleSubmit=async (event)=>{
+      event.preventDefault();
+      if(!caption.trim() ||!selectedFile){
+        console.log("Please enter all values")
+        return
+      }
+      const formData =new FormData()
+      formData.append('caption',caption)
+      formData.append('image',selectedFile)
+
+      try{
+        const res=await axiosInstance.post(contentType=='post'?'/posts/createPost':'/reels/createReel',formData,{
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }},)
+        if(res){
+          console.log(res)
+          if(contentType=='post'){
+            dispatch(addPostRedux(res.data.postData))
+          }
+        }
+        else{
+          console.log("No post posted , error")
+        }
+        setCaption('')
+        setSelectedFile(null)
+        return
+      }
+      catch(err){
+        console.log(err)
+        return 
+      }
+  }
+
+useEffect(()=>{
+    const getPosts = async()=>{
+      try{
+        let response= await axiosInstance.get('posts/getAllPosts')
+        dispatch(setPostsRedux(response.data))
+      }
+      catch(err){
+        console.log(err)
+        return
+      }
+    }
+    getPosts()
+  },[])
 
   const firstName = user?.name?.split(' ')[0] || 'there'
   const profilePath = `/profile/${user?.username}`
@@ -95,7 +145,7 @@ function Home() {
           </section>
 
           {/* Post and reel composer UI; publishing will be connected in class. */}
-          <form onSubmit={(event) => event.preventDefault()} className="mt-4 rounded-[28px] bg-surface p-3 shadow-sm">
+          <form onSubmit={(event) => {handleSubmit(event)}} className="mt-4 rounded-[28px] bg-surface p-3 shadow-sm">
             <div className="flex items-center gap-3">
               <Avatar src={user?.profileImage} name={user?.name} size="h-11 w-11 text-sm" />
               <label htmlFor="composer" className="sr-only">Write a caption</label>
@@ -145,7 +195,6 @@ function Home() {
 
               <button
                 type="submit"
-                disabled
                 title="Publishing will be added in class"
                 className="ml-auto h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white transition hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -166,7 +215,7 @@ function Home() {
           {/* Static preview: replace these cards with API data during the feed lesson. */}
           <section aria-label="Feed" className="mt-5 space-y-5">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard key={post._id} post={post} />
             ))}
           </section>
         </main>

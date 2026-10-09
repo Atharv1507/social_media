@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import postRoutes from './routes/post.routes.js'
 import reelRoutes from './routes/reel.routes.js'
+import commentRoutes from './routes/comment.routes.js'
 
 
 
@@ -34,7 +35,12 @@ app.use(cookieParser())
 app.use('/users' , userRoutes)
 app.use('/posts',postRoutes)
 app.use('/reels',reelRoutes)
+app.use('/comments',commentRoutes)
 
+app.get('/health',(req,res)=>{
+    return res.status(200).send('200 OK')
+
+})
 app.listen(PORT, () => {
     console.log(`Server Started at ${PORT}`)
 })
